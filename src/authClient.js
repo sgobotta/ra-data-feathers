@@ -1,9 +1,11 @@
+/* global localStorage:true */
+/* eslint no-undef: "error" */
 import {
   AUTH_LOGIN,
   AUTH_LOGOUT,
   AUTH_CHECK,
   AUTH_ERROR,
-  AUTH_GET_PERMISSIONS
+  AUTH_GET_PERMISSIONS,
 } from 'react-admin';
 import decodeJwt from 'jwt-decode';
 
@@ -15,15 +17,15 @@ export default (client, options = {}) => (type, params) => {
     permissionsField,
     passwordField,
     usernameField,
-    redirectTo
+    redirectTo,
   } = Object.assign({}, {
-      storageKey: 'token',
-      authenticate: { type: 'local' },
-      permissionsKey: 'permissions',
-      permissionsField: 'roles',
-      passwordField: 'password',
-      usernameField: 'email'
-    }, options);
+    storageKey: 'token',
+    authenticate: { type: 'local' },
+    permissionsKey: 'permissions',
+    permissionsField: 'roles',
+    passwordField: 'password',
+    usernameField: 'email',
+  }, options);
 
   switch (type) {
     case AUTH_LOGIN:
@@ -51,24 +53,22 @@ export default (client, options = {}) => (type, params) => {
       JWT token may be providen by oauth,
       so that's why the permissions are decoded here and not in AUTH_LOGIN.
       */
-      //Get the permissions from localstorage if any.
+      // Get the permissions from localstorage if any.
       const permissions = JSON.parse(localStorage.getItem(permissionsKey));
-      //If any, provide them.
+      // If any, provide them.
       if (permissions) {
         return Promise.resolve(permissions);
       }
+
       // Or find them from the token, save them and provide them.
-      else {
-        try {
-          const jtwToken = localStorage.getItem(storageKey);
-          const decodedToken = decodeJwt(jtwToken);
-          const permissions = decodedToken[permissionsField] ? decodedToken[permissionsField] : [];
-          localStorage.setItem(permissionsKey, JSON.stringify(permissions));
-          return Promise.resolve(permissions);
-        }
-        catch (e) {
-          return Promise.reject();
-        }
+      try {
+        const jtwToken = localStorage.getItem(storageKey);
+        const decodedToken = decodeJwt(jtwToken);
+        const perms = decodedToken[permissionsField] ? decodedToken[permissionsField] : [];
+        localStorage.setItem(permissionsKey, JSON.stringify(perms));
+        return Promise.resolve(perms);
+      } catch (e) {
+        return Promise.reject();
       }
 
     default:
